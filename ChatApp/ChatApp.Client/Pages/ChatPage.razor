@@ -1,0 +1,133 @@
+﻿@page "/chat"
+@using ChatApp.Client.Pages.Components
+@using Microsoft.AspNetCore.SignalR.Client
+@using Shared.Models
+@rendermode InteractiveWebAssembly
+@inject NavigationManager navManager
+<PageTitle>Chat</PageTitle>
+@if (!string.IsNullOrWhiteSpace(user.UserName))
+{
+    <div class="chat-page">
+        <div class="chat-list">
+            <ChatListComponent selectUser="@ChangeChat" chats="chats" userName="userName"></ChatListComponent>
+        </div>
+
+
+        <div class="chat-window">
+            @if (chat != null && chat.Messages.Any())
+            {
+                @foreach (var message in chat.Messages)
+                {
+                    <div class="message">
+                        <div class="message-header">
+                            <div class="message-body">
+                                <span class="message-time">@message.TimeSent.ToString("HH:mm")</span>                                
+                                <span>@message.SenderName</span>
+                                <p>@message.Body</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="message-input-area">
+            <input type="text" class="message-input" @bind-value="message.Body" @onkeyup="HandleKeyPress" placeholder="Type your message..." />
+            <button class="send-button" @onclick="Send">Send</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    Login
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="username">Enter your name:</label>
+                        <InputText id="username" class="form-control" @bind-Value="userName" />
+                    </div>
+                    <button class="btn btn-primary" @onclick="Login">Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code {
+    private Message message = new Message();
+    private User user = new User();
+    private Chat chat = new Chat();
+    private List<Chat> chats = new List<Chat>();
+    private HubConnection _hubConnection;
+    public string userName { get; set; }
+    public string _receiverName { get; set; }
+
+    private async Task Login()
+    {
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+
+            var httpClient = new HttpClient();
+            user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
+            if (user.Chats != null)
+            {
+                chats = await httpClient.GetFromJsonAsync<List<Chat>>("https://localhost:7121/api/user/GetUserChats?username=" + userName);
+                chat = user.Chats.FirstOrDefault();
+            }
+            user.UserName = userName;
+
+            await _hubConnection.InvokeAsync("Register", userName);
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder().WithUrl(navManager.ToAbsoluteUri("/chathub")).Build();
+        _hubConnection.On<Message>("ReceiveMessage", (message) =>
+        {
+            if (chat == null || message.ChatId != chat.Id)
+                ++chats.FirstOrDefault(x=>x.Id == message.ChatId).UnreadMessages;
+            else
+                chat.Messages.Add(message);
+
+            InvokeAsync(StateHasChanged); 
+        });
+        await _hubConnection.StartAsync();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Send();
+        }
+    }
+    async Task Send()
+    {
+        message.ChatId = chat.Id;
+        message.TimeSent = DateTime.Now;
+        message.SenderName = user.UserName;
+        chat.Messages.Add(message);
+        await _hubConnection.InvokeAsync("SendMessage", message, _receiverName);
+        message = new Message();
+
+    }
+
+    private async Task ChangeChat(string receiverName)
+    {
+        var httpClient = new HttpClient();
+        Uri uri = new Uri($"https://localhost:7121/api/user/GetOrCreateChat?senderName={userName}&receiverName={receiverName}");
+        chat = await httpClient.GetFromJsonAsync<Chat>(uri);
+        _receiverName = receiverName;
+    }
+    private async Task ReceiveMessage(Message message)
+    {
+        chat.Messages.Add(message);
+        if (message.ChatId != chat.Id)
+            ++chat.UnreadMessages;
+    }
+}

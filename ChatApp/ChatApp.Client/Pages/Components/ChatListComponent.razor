@@ -1,0 +1,65 @@
+﻿@page "/chatlist"
+@using Shared.Models
+@inject NavigationManager Navigation
+
+<div class="chat-list-container">
+
+    @if (chats.Any())
+    {
+        @foreach (var chat in chats)
+        {
+            <div class="chat-item" @onclick="() => SelectChat(chat)">
+                <span>@(chat.Sender.UserName != userName ? chat.Sender.UserName : chat.Receiver.UserName)</span>
+                @if (chat.UnreadMessages > 0)
+                {
+                    <span class="unread-badge">@chat.UnreadMessages</span>
+                }
+            </div>
+        }
+    }
+    <div class="chat-item add-chat">
+        <input type="text" class="add-user-input" @bind="newUserName" placeholder="Add user name" />
+        <button class="add-user-button" @onclick="AddNewChat">+</button>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <span class="error-message">@errorMessage</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<string> selectUser { get; set; }
+    [Parameter]
+    public List<Chat> chats { get; set; } = new List<Chat>();
+    [Parameter]
+    public string userName { get; set; }
+    private Chat selectedChat;
+    public string errorMessage { get; set; }
+    public string newUserName { get; set; }
+
+    private void SelectChat(Chat chat)
+    {
+        selectedChat = chat;
+        chat.UnreadMessages = 0;
+        selectUser.InvokeAsync(chat.Sender.UserName);
+    }
+    private async Task AddNewChat()
+    {
+        if (string.IsNullOrWhiteSpace(newUserName))
+        {
+            errorMessage = "User name is required.";
+            return;
+        }
+        var httpClient = new HttpClient();
+        var userExistsResponse = await httpClient.GetFromJsonAsync<bool>($"https://localhost:7121/api/user/UserExists?username={newUserName}");
+        if (userExistsResponse)
+        {
+            selectUser.InvokeAsync(newUserName);
+        }
+        else
+        {
+            errorMessage = $"User '{newUserName}' is not exists.";
+        }
+    }
+}
