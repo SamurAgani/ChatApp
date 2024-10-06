@@ -1,0 +1,38 @@
+﻿@using Shared.Models
+@inject NavigationManager navManager
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header">
+                Login
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label>Enter your name:</label>
+                    <InputText id="userName" class="form-control" @bind-Value="userName" />
+
+                </div>
+                <button class="btn btn-primary" @onclick="SignIn">SignIn</button> 
+
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    public string userName { get; set; }
+
+
+    async Task SignIn()
+    {
+        // if (!string.IsNullOrWhiteSpace(userName))
+        // {
+
+        //     var httpClient = new HttpClient();
+        //     var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
+        //     if(user != null)
+        //         navManager.NavigateTo($"/chat/{user.UserName}");
+
+
+        // }
+    }
+}
