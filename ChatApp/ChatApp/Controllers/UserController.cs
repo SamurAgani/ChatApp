@@ -95,7 +95,7 @@ namespace ChatApp.Controllers
 
             if (existingChat != null)
             {
-                if (existingChat.Messages.OrderByDescending(x => x.Id).FirstOrDefault().SenderName != senderName)
+                if (existingChat.Messages.OrderByDescending(x => x.Id).FirstOrDefault()?.SenderName != senderName)
                 {
                     existingChat.UnreadMessages = 0;
                     await _chatRepo.UpdateChatAsync(existingChat);
