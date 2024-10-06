@@ -46,7 +46,7 @@
     }
     private async Task AddNewChat()
     {
-        if (string.IsNullOrWhiteSpace(newUserName))
+        if (string.IsNullOrWhiteSpace(newUserName) || newUserName == userName)
         {
             errorMessage = "User name is required.";
             return;

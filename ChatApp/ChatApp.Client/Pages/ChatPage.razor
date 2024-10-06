@@ -7,7 +7,7 @@
 <PageTitle>Chat</PageTitle>
 <div class="chat-page">
     <div class="chat-list">
-        <ChatListComponent selectUser="@ChangeChat" chats="chats" userName="userName"></ChatListComponent>
+        <ChatListComponent selectUser="@ChangeChat" chats="@chats" userName="@userName"></ChatListComponent>
     </div>
 
 
@@ -52,7 +52,11 @@
         _hubConnection = new HubConnectionBuilder().WithUrl(navManager.ToAbsoluteUri("/chathub")).Build();
         _hubConnection.On<Message>("ReceiveMessage", (message) =>
         {
-            if (chat == null || message.ChatId != chat.Id)
+            if (!chats.Any(x => x.Id == message.ChatId))
+            {
+                chats.Add(new Chat() { Id = message.Id, Sender = new User() { UserName = message.SenderName }, UnreadMessages = 1 });
+            }
+            else if (chat == null || message.ChatId != chat.Id)
                 ++chats.FirstOrDefault(x => x.Id == message.ChatId).UnreadMessages;
             else
                 chat.Messages.Add(message);
@@ -101,11 +105,7 @@
         Uri uri = new Uri($"https://localhost:7121/api/user/GetOrCreateChat?senderName={userName}&receiverName={receiverName}");
         chat = await httpClient.GetFromJsonAsync<Chat>(uri);
         _receiverName = receiverName;
+        chats.Add(chat);
     }
-    private async Task ReceiveMessage(Message message)
-    {
-        chat.Messages.Add(message);
-        if (message.ChatId != chat.Id)
-            ++chat.UnreadMessages;
-    }
+
 }
