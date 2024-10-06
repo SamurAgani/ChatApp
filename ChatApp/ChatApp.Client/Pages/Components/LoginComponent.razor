@@ -1,5 +1,7 @@
 ﻿@using Shared.Models
 @inject NavigationManager navManager
+@rendermode InteractiveWebAssembly
+
 <div class="row">
     <div class="col-lg-7">
         <div class="card">
@@ -22,17 +24,17 @@
     public string userName { get; set; }
 
 
-    async Task SignIn()
+    public async Task SignIn()
     {
-        // if (!string.IsNullOrWhiteSpace(userName))
-        // {
-
-        //     var httpClient = new HttpClient();
-        //     var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
-        //     if(user != null)
-        //         navManager.NavigateTo($"/chat/{user.UserName}");
-
-
-        // }
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+       
+            var httpClient = new HttpClient();
+            var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
+            if(user != null)
+                navManager.NavigateTo($"/chat/{user.UserName}");
+       
+       
+        }
     }
 }
