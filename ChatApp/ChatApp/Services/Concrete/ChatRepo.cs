@@ -29,12 +29,23 @@ namespace ChatApp.Services.Concrete
         }
         public async Task<IEnumerable<Chat>> GetChatsByUserNameAsync(string username)
         {
-            return await _dbContext.Chats
-                .Include(c => c.Messages)
-                .Include(c => c.Sender)
-                .Include(c => c.Receiver)
-                .Where(c => c.Receiver.UserName == username || c.Sender.UserName == username)
-                .ToListAsync();
+            var chats = await _dbContext.Chats
+                        .Include(c => c.Messages)
+                        .Include(c => c.Sender)
+                        .Include(c => c.Receiver)
+                        .Where(c => c.Receiver.UserName == username || c.Sender.UserName == username)
+                        .ToListAsync();
+
+            foreach (var chat in chats)
+            {
+                var lastMessage = chat.Messages.OrderByDescending(m => m.TimeSent).FirstOrDefault();
+                if (lastMessage != null && lastMessage.SenderName == username)
+                {
+                    chat.UnreadMessages = 0;
+                }
+            }
+
+            return chats;
         }
         public async Task<User?> GetUserByUserNameAsync(string username)
         {

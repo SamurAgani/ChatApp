@@ -19,11 +19,16 @@ namespace ChatApp.Controllers
         [HttpGet("GetUserChats")]
         public async Task<ActionResult<List<Chat>>> GetUserChats([FromQuery] string username)
         {
-            var Chats = (await _chatRepo.GetChatsByUserNameAsync(username)).ToList();
+            var Chats = await _chatRepo.GetChatsByUserNameAsync(username);
 
             return Ok(Chats);
         }
-
+        [HttpPost("UpdateChat")]
+        public async Task<ActionResult> UpdateChat(Chat chat)
+        {
+            await _chatRepo.UpdateChatAsync(chat);
+            return Ok();
+        }
         [HttpGet]
         public async Task<ActionResult<User>> GetOrCreateUser([FromQuery] string username)
         {
@@ -90,8 +95,11 @@ namespace ChatApp.Controllers
 
             if (existingChat != null)
             {
-                existingChat.UnreadMessages = 0;
-                await _chatRepo.UpdateChatAsync(existingChat);
+                if (existingChat.Messages.OrderByDescending(x => x.Id).FirstOrDefault().SenderName != senderName)
+                {
+                    existingChat.UnreadMessages = 0;
+                    await _chatRepo.UpdateChatAsync(existingChat);
+                }
                 return Ok(existingChat);
             }
 

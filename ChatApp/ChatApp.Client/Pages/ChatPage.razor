@@ -50,7 +50,7 @@
     protected override async Task OnInitializedAsync()
     {
         _hubConnection = new HubConnectionBuilder().WithUrl(navManager.ToAbsoluteUri("/chathub")).Build();
-        _hubConnection.On<Message>("ReceiveMessage", (message) =>
+        _hubConnection.On<Message>("ReceiveMessage", async (message) =>
         {
             if (!chats.Any(x => x.Id == message.ChatId))
             {
@@ -61,7 +61,9 @@
             else
                 chat.Messages.Add(message);
 
-            InvokeAsync(StateHasChanged);
+            var httpClient = new HttpClient();
+            var response = await httpClient.PostAsJsonAsync("https://localhost:7121/api/chat/UpdateChat", chat);
+            await InvokeAsync(StateHasChanged);
         });
         await _hubConnection.StartAsync();
 
@@ -105,7 +107,8 @@
         Uri uri = new Uri($"https://localhost:7121/api/user/GetOrCreateChat?senderName={userName}&receiverName={receiverName}");
         chat = await httpClient.GetFromJsonAsync<Chat>(uri);
         _receiverName = receiverName;
-        chats.Add(chat);
+        if(!chats.Any(x=>x.Id == chat.Id))
+            chats.Add(chat);
     }
 
 }

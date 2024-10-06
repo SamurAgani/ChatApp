@@ -42,7 +42,7 @@
     {
         selectedChat = chat;
         chat.UnreadMessages = 0;
-        selectUser.InvokeAsync(chat.Sender.UserName);
+        selectUser.InvokeAsync(chat.Sender.UserName != userName ? chat.Sender.UserName : chat.Receiver.UserName);
     }
     private async Task AddNewChat()
     {
