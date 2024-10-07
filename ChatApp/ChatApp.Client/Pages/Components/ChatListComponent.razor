@@ -7,7 +7,7 @@
     {
         @foreach (var chat in Chats)
         {
-            <div class="chat-item @(chat == selectedChat ? "selected" : "")" @onclick="() => SelectChat(chat)">
+            <div class="chat-item @(chat == _selectedChat ? "selected" : "")" @onclick="() => SelectChat(chat)">
                 <span>@GetChatDisplayName(chat)</span>
                 @if (chat.UnreadMessages > 0)
                 {
@@ -36,13 +36,13 @@
     [Parameter]
     public string UserName { get; set; }
 
-    private Chat selectedChat;
+    private Chat _selectedChat;
     public string ErrorMessage { get; set; }
     public string newUserName { get; set; }
 
     private void SelectChat(Chat chat)
     {
-        selectedChat = chat;
+        _selectedChat = chat;
         chat.UnreadMessages = 0;
         string selectedUserName = GetChatDisplayName(chat);
         SelectUser.InvokeAsync(selectedUserName);
@@ -67,15 +67,15 @@
         {
             var httpClient = new HttpClient();
             var userExistsResponse = await httpClient.GetFromJsonAsync<bool>($"https://localhost:7121/api/user/UserExists?username={newUserName}");
-            if (userExistsResponse)
-            {
-                await SelectUser.InvokeAsync(newUserName);
-                newUserName = string.Empty;
-            }
-            else
+
+            if (!userExistsResponse)
             {
                 ErrorMessage = $"User '{newUserName}' does not exist.";
+                return;
             }
+            
+            await SelectUser.InvokeAsync(newUserName);
+            newUserName = string.Empty;
         }
         catch (Exception ex)
         {

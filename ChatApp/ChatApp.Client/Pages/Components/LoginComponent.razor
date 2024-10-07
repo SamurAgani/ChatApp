@@ -14,7 +14,7 @@
                     <InputText id="userName" class="form-control" @bind-Value="userName" />
 
                 </div>
-                <button class="btn btn-primary" @onclick="SignIn">SignIn</button> 
+                <button class="btn btn-primary" @onclick="SignIn">SignIn</button>
 
             </div>
         </div>
@@ -26,15 +26,15 @@
 
     public async Task SignIn()
     {
-        if (!string.IsNullOrWhiteSpace(userName))
+        if (string.IsNullOrWhiteSpace(userName))
         {
-       
-            var httpClient = new HttpClient();
-            var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
-            if(user != null)
-                navManager.NavigateTo($"/chat/{user.UserName}");
-       
-       
+            return;
         }
+
+        var httpClient = new HttpClient();
+        var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
+        if (user != null)
+            navManager.NavigateTo($"/chat/{user.UserName}");
+
     }
 }

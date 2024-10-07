@@ -1,5 +1,4 @@
 ﻿using ChatApp.Services.Abstract;
-using ChatApp.Services.Concrete;
 using Microsoft.AspNetCore.SignalR;
 using Shared.Models;
 using System.Collections.Concurrent;
@@ -8,12 +7,12 @@ namespace ChatApp.Hubs
 {
     public class ChatHub : Hub
     {
-        public IChatRepo chatRepo { get; set; }
-        private static ConcurrentDictionary<string, string> _userConnections = new ConcurrentDictionary<string, string>();
+        private IChatRepo _chatRepo { get; set; }
+        private static readonly ConcurrentDictionary<string, string> _userConnections = new();
 
         public ChatHub(IChatRepo chatRepo)
         {
-            this.chatRepo = chatRepo;
+            _chatRepo = chatRepo;
         }
 
         public async Task Register(string userName)
@@ -27,16 +26,15 @@ namespace ChatApp.Hubs
 
         public async Task SendMessage(Message message, string receiverName)
         {
-            await chatRepo.AddMessageAsync(message);
+            await _chatRepo.AddMessageAsync(message);
 
-            if (_userConnections.TryGetValue(receiverName, out string receiverConnectionId))
+            if (_userConnections.TryGetValue(receiverName, out var receiverConnectionId))
             {
                 await Clients.Client(receiverConnectionId).SendAsync("ReceiveMessage", message);
+                return;
             }
-            else
-            {
-                await chatRepo.IncreaseUnreadMessagesAsync(message.ChatId);
-            }
+
+            await _chatRepo.IncreaseUnreadMessagesAsync(message.ChatId);
         }
     }
 }

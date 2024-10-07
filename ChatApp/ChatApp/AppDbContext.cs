@@ -21,13 +21,13 @@ namespace ChatApp
                 .HasOne(c => c.Sender)
                 .WithMany()
                 .HasForeignKey("SenderId")
-                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete for Sender
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Chat>()
                 .HasOne(c => c.Receiver)
                 .WithMany()
                 .HasForeignKey("ReceiverId")
-                .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete for Receiver
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

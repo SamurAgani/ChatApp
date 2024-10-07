@@ -1,11 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Shared.Models;
+﻿using Shared.Models;
 
 namespace ChatApp.Services.Abstract
 {
     public interface IChatRepo
     {
-        public Task<List<Shared.Models.Chat>> GetAllChatsAsync();
+        public Task<List<Chat>> GetAllChatsAsync();
         public Task AddMessageAsync(Message message);
         public Task<IEnumerable<Chat>> GetChatsByUserNameAsync(string username); 
         Task<User?> GetUserByUserNameAsync(string username);

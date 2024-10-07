@@ -27,6 +27,7 @@ namespace ChatApp.Services.Concrete
             _dbContext.Messages.Add(message);
             await _dbContext.SaveChangesAsync();
         }
+
         public async Task<IEnumerable<Chat>> GetChatsByUserNameAsync(string username)
         {
             var chats = await _dbContext.Chats
@@ -39,6 +40,7 @@ namespace ChatApp.Services.Concrete
             foreach (var chat in chats)
             {
                 var lastMessage = chat.Messages.OrderByDescending(m => m.TimeSent).FirstOrDefault();
+
                 if (lastMessage != null && lastMessage.SenderName == username)
                 {
                     chat.UnreadMessages = 0;
@@ -47,17 +49,18 @@ namespace ChatApp.Services.Concrete
 
             return chats;
         }
+
         public async Task<User?> GetUserByUserNameAsync(string username)
         {
             return await _dbContext.Users.Include(c => c.Chats).FirstOrDefaultAsync(u => u.UserName == username);
         }
 
-        // Create a new user
         public async Task CreateUserAsync(User user)
         {
             _dbContext.Users.Add(user);
             await _dbContext.SaveChangesAsync();
         }
+
         public async Task<Chat?> GetChatBetweenUsersAsync(string senderName, string receiverName)
         {
             return await _dbContext.Chats
@@ -68,27 +71,32 @@ namespace ChatApp.Services.Concrete
                     (c.Sender.UserName == senderName && c.Receiver.UserName == receiverName) ||
                     (c.Sender.UserName == receiverName && c.Receiver.UserName == senderName));
         }
+
         public async Task CreateChatAsync(Chat chat)
         {
             _dbContext.Chats.Add(chat);
             await _dbContext.SaveChangesAsync();
         }
+
         public async Task IncreaseUnreadMessagesAsync(int chatId)
         {
             var chat = await _dbContext.Chats.FindAsync(chatId);
-            if (chat != null)
+
+            if (chat == null)
             {
-                chat.UnreadMessages++;
-                await _dbContext.SaveChangesAsync();
+                return;
             }
+
+            chat.UnreadMessages++;
+            await _dbContext.SaveChangesAsync();
         }
+
         public async Task UpdateChatAsync(Chat chat)
         {
             var existingChat = await _dbContext.Chats.FindAsync(chat.Id);
             if (existingChat != null)
             {
                 existingChat.UnreadMessages = chat.UnreadMessages;
-                // Update other properties if necessary
 
                 _dbContext.Entry(existingChat).State = EntityState.Modified;
                 await _dbContext.SaveChangesAsync();
