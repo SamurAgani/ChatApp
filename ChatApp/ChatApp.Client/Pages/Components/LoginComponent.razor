@@ -1,38 +1,39 @@
 ﻿@using Shared.Models
+@using MudBlazor
 @inject NavigationManager navManager
 @rendermode InteractiveWebAssembly
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-<div class="row">
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header">
-                Login
-            </div>
-            <div class="card-body">
-                <div class="form-group mb-3">
-                    <label>Enter your name:</label>
-                    <InputText id="userName" class="form-control" @bind-Value="userName" />
-
-                </div>
-                <button class="btn btn-primary" @onclick="SignIn">SignIn</button>
-
-            </div>
-        </div>
-    </div>
-</div>
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Elevation="4" Class="pa-4">
+            <MudText Typo="Typo.h6">Login</MudText>
+            <MudForm>
+                <MudTextField T="string" 
+                              @bind-Value="UserName" 
+                              Variant="Variant.Filled" 
+                              Label="Enter your name" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignIn">Sign In</MudButton>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 @code {
-    public string userName { get; set; }
+    public string UserName { get; set; }
 
 
     public async Task SignIn()
     {
-        if (string.IsNullOrWhiteSpace(userName))
+        if (string.IsNullOrWhiteSpace(UserName))
         {
             return;
         }
 
         var httpClient = new HttpClient();
-        var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + userName);
+        var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + UserName);
         if (user != null)
             navManager.NavigateTo($"/chat/{user.UserName}");
 

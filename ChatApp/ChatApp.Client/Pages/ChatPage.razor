@@ -2,38 +2,55 @@
 @using ChatApp.Client.Pages.Components
 @using Microsoft.AspNetCore.SignalR.Client
 @using Shared.Models
+@using MudBlazor
 @rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
+@inject MudBlazor.ISnackbar Snackbar
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <PageTitle>Chat</PageTitle>
 
-<div class="chat-page">
-    <div class="chat-list">
-        <ChatListComponent SelectUser="@ChangeChat" Chats="@chats" UserName="@userName"></ChatListComponent>
-    </div>
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudGrid>
+        <MudItem xs="4">
+            <MudPaper Class="pa-2">
+                <ChatListComponent SelectUser="@ChangeChat" Chats="@chats" UserName="@userName"></ChatListComponent>
+            </MudPaper>
+        </MudItem>
 
-    <div class="chat-window">
-        @if (currentChat != null && currentChat.Messages.Any())
-        {
-            @foreach (var message in currentChat.Messages)
-            {
-                <div class="message">
-                    <div class="message-header">
-                        <div class="message-body">
-                            <span class="message-time">@message.TimeSent.ToString("HH:mm")</span>
-                            <span>@message.SenderName</span>
-                            <p>@message.Body</p>
-                        </div>
-                    </div>
-                </div>
-            }
-        }
-    </div>
+        <MudItem xs="8">
+            <MudPaper Class="pa-2" Style="background-color: black; color: white;">
+                @if (currentChat != null && currentChat.Messages.Any())
+                {
+                    @foreach (var message in currentChat.Messages)
+                    {
+                        <MudPaper Class="message pa-2 mb-2" Elevation="1">
+                            <MudText Typography="Body2">@message.TimeSent.ToString("HH:mm")</MudText>
+                                <MudText Typography="Body1"><b>@message.SenderName</b></MudText>
+                            <MudText>@message.Body</MudText>
+                            </MudPaper>
+                    }
+                }
+                else
+                {
+                    <MudText>No messages yet</MudText>
+                }
+            </MudPaper>
 
-    <div class="message-input-area">
-        <input type="text" class="message-input" @bind-value="newMessage.Body" @onkeyup="HandleKeyPress" placeholder="Type your message..." />
-        <button class="send-button" @onclick="SendMessageAsync">Send</button>
-    </div>
-</div>
+            <MudPaper Class="pa-2 mt-2">
+                <MudTextField T="string" @bind-Value="newMessage.Body" Placeholder="Type your message..." Immediate="true" OnKeyDown="HandleKeyPress" FullWidth="true">
+                  
+                 
+                </MudTextField>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="SendMessageAsync"> Send </MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
 
 @code {
     private Message newMessage = new();

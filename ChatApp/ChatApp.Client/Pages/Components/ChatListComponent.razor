@@ -2,29 +2,37 @@
 @using Shared.Models
 @inject NavigationManager Navigation
 
-<div class="chat-list-container">
-    @if (Chats.Any())
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<MudContainer Class="chat-list-container">
+@if (Chats.Any())
+{
+    @foreach (var chat in Chats)
     {
-        @foreach (var chat in Chats)
-        {
-            <div class="chat-item @(chat == _selectedChat ? "selected" : "")" @onclick="() => SelectChat(chat)">
-                <span>@GetChatDisplayName(chat)</span>
-                @if (chat.UnreadMessages > 0)
-                {
-                    <span class="unread-badge">@chat.UnreadMessages</span>
-                }
-            </div>
-        }
+        <MudPaper Class="mb-2" @onclick="() => SelectChat(chat)" Elevation="1">
+            <MudItemText>
+                @GetChatDisplayName(chat)
+            </MudItemText>
+            @if (chat.UnreadMessages > 0)
+            {
+                <MudBadge Content="@chat.UnreadMessages" Color="Color.Secondary" />
+            }
+        </MudPaper>
     }
-    <div class="chat-item add-chat">
-        <input type="text" class="add-user-input" @bind="newUserName" placeholder="Add user name" />
-        <button class="add-user-button" @onclick="AddNewChatAsync">+</button>
+}
+
+    <MudPaper Class="chat-item pa-2 mt-2" Elevation="1">
+        <MudTextField T="string" @bind-Value="newUserName" Placeholder="Add user name" Variant="MudBlazor.Variant.Outlined" FullWidth="true" />
+        <MudButton Color="Color.Primary" Variant="MudBlazor.Variant.Text" @onclick="AddNewChatAsync">+</MudButton>
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            <span class="error-message">@ErrorMessage</span>
+            <MudText Color="Color.Error">@ErrorMessage</MudText>
         }
-    </div>
-</div>
+    </MudPaper>
+
+</MudContainer>
 
 @code {
     [Parameter]
@@ -73,7 +81,7 @@
                 ErrorMessage = $"User '{newUserName}' does not exist.";
                 return;
             }
-            
+
             await SelectUser.InvokeAsync(newUserName);
             newUserName = string.Empty;
         }
