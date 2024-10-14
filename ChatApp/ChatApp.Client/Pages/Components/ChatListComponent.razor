@@ -2,18 +2,18 @@
 @using Shared.Models
 @inject NavigationManager Navigation
 
-<MudContainer Class="chat-list-container pa-4" Style="background-color: #f5f5f5; border-radius: 8px; max-height: 600px; overflow-y: auto;">
+<MudContainer Class="chat-list-container pa-4">
     @if (Chats.Any())
     {
         @foreach (var chat in Chats)
         {
-            <MudPaper Class="mb-2 chat-item" @onclick="() => SelectChat(chat)" Elevation="2" Style="padding: 10px; cursor: pointer; transition: background-color 0.3s; background-color: #ffffff; border-radius: 8px;">
+            <MudPaper Class="mb-2 chat-item" @onclick="() => SelectChat(chat)" Elevation="2">
                 <MudItemText>
                     <MudText Style="font-weight: bold;">@GetChatDisplayName(chat)</MudText>
                 </MudItemText>
                 @if (chat.UnreadMessages > 0)
                 {
-                    <MudBadge Content="@chat.UnreadMessages" Color="Color.Secondary" Style="margin-left: 8px;"/>
+                    <MudBadge Content="@chat.UnreadMessages" Color="Color.Secondary" Class="chat-badge"/>
                 }
             </MudPaper>
         }
@@ -23,13 +23,13 @@
         <MudText>No active chats available</MudText>
     }
 
-    <MudPaper Class="chat-item pa-3 mt-3" Elevation="1" Style="border-radius: 8px; background-color: #ffffff;">
+    <MudPaper Class="chat-item chat-add-item pa-3 mt-3" Elevation="1">
         <MudGrid>
             <MudItem xs="9">
-                <MudTextField T="string" @bind-Value="newUserName" Placeholder="Add user name" Variant="Variant.Outlined" FullWidth="true" Style="border-radius: 8px;" />
+                <MudTextField T="string" @bind-Value="newUserName" Placeholder="Add user name" Variant="Variant.Outlined" FullWidth="true" Class="chat-add-textfield" />
             </MudItem>
             <MudItem xs="3">
-                <MudButton Color="Color.Primary" Variant="Variant.Text" @onclick="AddNewChatAsync" FullWidth="true" Style="font-size: 1.5rem;">+</MudButton>
+                <MudButton Color="Color.Primary" Variant="Variant.Text" @onclick="AddNewChatAsync" FullWidth="true" Class="chat-add-button">+</MudButton>
             </MudItem>
         </MudGrid>
         @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -38,6 +38,7 @@
         }
     </MudPaper>
 </MudContainer>
+
 
 
 @code {
