@@ -3,21 +3,22 @@
 @inject NavigationManager navManager
 @rendermode InteractiveWebAssembly
 
-<MudGrid Style="height: 100vh; display: flex; justify-content: center; align-items: center;">
+<MudGrid Class="mud-grid-container">
     <MudItem xs="12" sm="12" md="8" lg="6" xl="4">
-        <MudPaper Elevation="4" Style="padding: 2rem; background-color: #ffffff; border-radius: 8px; max-width: 100%; width: 100%;">
-            <MudText Typo="Typo.h6" Style="text-align: center; margin-bottom: 1.5rem; font-weight: bold; color: #333;">Login</MudText>
-            <MudForm Style="display: flex; flex-direction: column;">
+        <MudPaper Elevation="4" Class="mud-paper">
+            <MudText Typo="Typo.h6" Class="mud-text">Login</MudText>
+            <MudForm Class="mud-form">
                 <MudTextField T="string" 
                               @bind-Value="UserName" 
                               Variant="Variant.Filled" 
                               Label="Enter your name"
-                              Style="margin-bottom: 1rem; width: 100%;" />
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignIn" Style="width: 100%; border-radius: 8px; padding: 0.75rem; font-size: 1.1rem;">Sign In</MudButton>
+                              Class="mud-textfield" />
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignIn" Class="mud-button">Sign In</MudButton>
             </MudForm>
         </MudPaper>
     </MudItem>
 </MudGrid>
+
 
 
 

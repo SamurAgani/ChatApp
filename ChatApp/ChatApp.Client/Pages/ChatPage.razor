@@ -9,47 +9,48 @@
 
 <PageTitle>Chat</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="pa-4">
+<MudContainer MaxWidth="MaxWidth.Large" class="mud-container">
     <MudGrid>
         <MudItem xs="4">
-            <MudPaper Class="pa-3" Style="background-color: #f5f5f5; border-radius: 8px;">
+            <MudPaper class="chat-list-container pa-3">
                 <ChatListComponent SelectUser="@ChangeChat" Chats="@chats" UserName="@userName"></ChatListComponent>
             </MudPaper>
         </MudItem>
 
         <MudItem xs="8">
-            <MudPaper Class="pa-3" Style="background-color: #2c2c2c; color: white; border-radius: 8px; min-height: 400px; max-height: 600px; overflow-y: auto;">
+            <MudPaper class="chat-window pa-3">
                 @if (currentChat != null && currentChat.Messages.Any())
                 {
                     @foreach (var message in currentChat.Messages)
                     {
-                        <MudPaper Class="message pa-2 mb-2" Elevation="1" Style="border-radius: 8px; background-color: #3c3c3c; transition: background-color 0.3s;">
-                            <MudText Typography="Body2" Style="color: #b0b0b0;">@message.TimeSent.ToString("HH:mm")</MudText>
-                            <MudText Typography="Body1" Style="color: #f0f0f0;"><b>@message.SenderName</b></MudText>
-                            <MudText Typography="Body1" Style="color: #f0f0f0;">@message.Body</MudText>
+                        <MudPaper class="chat-message" Elevation="1">
+                            <MudText Typography="Body2" class="message-time">@message.TimeSent.ToString("HH:mm")</MudText>
+                            <MudText Typography="Body1" class="message-sender"><b>@message.SenderName</b></MudText>
+                            <MudText Typography="Body1" class="message-body">@message.Body</MudText>
                         </MudPaper>
                     }
                 }
                 else
                 {
-                    <MudText>No messages yet</MudText>
+                    <MudText class="no-messages">No messages yet</MudText>
                 }
             </MudPaper>
 
-            <MudPaper Class="pa-3 mt-2" Style="border-radius: 8px; background-color: #f5f5f5;">
+            <MudPaper class="message-input-container pa-3">
                 <MudGrid>
                     <MudItem xs="10">
-                        <MudTextField T="string" @bind-Value="newMessage.Body" Placeholder="Type your message..." Immediate="true" OnKeyDown="HandleKeyPress" FullWidth="true" Style="background-color: #ffffff; border-radius: 8px;">
+                        <MudTextField T="string" @bind-Value="newMessage.Body" Placeholder="Type your message..." Immediate="true" OnKeyDown="HandleKeyPress" FullWidth="true" class="message-text-field">
                         </MudTextField>
                     </MudItem>
                     <MudItem xs="2">
-                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="SendMessageAsync" FullWidth="true" Style="border-radius: 8px;"> Send </MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="SendMessageAsync" FullWidth="true" class="send-button">Send</MudButton>
                     </MudItem>
                 </MudGrid>
             </MudPaper>
         </MudItem>
     </MudGrid>
 </MudContainer>
+
 
 @code {
     private Message newMessage = new();
