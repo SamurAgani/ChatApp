@@ -1,18 +1,21 @@
-﻿using Shared.Models;
+﻿using FluentResults;
+using Shared.Models;
 
 namespace ChatApp.Services.Abstract
 {
     public interface IChatRepo
     {
-        public Task<List<Chat>> GetAllChatsAsync();
-        public Task AddMessageAsync(Message message);
-        public Task<IEnumerable<Chat>> GetChatsByUserNameAsync(string username); 
-        Task<User?> GetUserByUserNameAsync(string username);
-        Task CreateUserAsync(User user);
-        Task<Chat?> GetChatBetweenUsersAsync(string senderName, string receiverName);
-        Task CreateChatAsync(Chat chat);
-        Task IncreaseUnreadMessagesAsync(int chatId);
-        Task UpdateChatAsync(Chat chat);
+        // In IChatRepo
+        Task<Result<User>> GetUserByUserNameAsync(string username);
+        Task<Result> CreateUserAsync(User user);
+        Task<Result<List<Chat>>> GetChatsByUserNameAsync(string username, int page, int pageSize);
+        Task<Result> UpdateChatAsync(Chat chat);
+        Task<Result<Chat>> GetChatBetweenUsersAsync(string senderName, string receiverName);
+
+        Task<Result<List<Chat>>> GetAllChatsAsync();
+        Task<Result> AddMessageAsync(Message message);
+        Task<Result> CreateChatAsync(Chat chat);
+        Task<Result> IncreaseUnreadMessagesAsync(int chatId);
 
     }
 }

@@ -1,11 +1,12 @@
 ﻿@page "/chat/{userName}"
 @using ChatApp.Client.Pages.Components
+@using ChatApp.Client.Services.Abstract
 @using Microsoft.AspNetCore.SignalR.Client
 @using Shared.Models
 @using MudBlazor
-@rendermode InteractiveWebAssembly
 @inject NavigationManager Navigation
 @inject MudBlazor.ISnackbar Snackbar
+@rendermode InteractiveWebAssembly
 
 <PageTitle>Chat</PageTitle>
 
@@ -51,25 +52,24 @@
     </MudGrid>
 </MudContainer>
 
-
 @code {
+    [Inject]
+    private IChatService ChatService { get; set; }
     private Message newMessage = new();
     private User currentUser = new();
     private Chat currentChat = new();
     private List<Chat> chats = new();
     private HubConnection hubConnection;
-    private HttpClient httpClient;
     [Parameter]
     public string userName { get; set; }
     private string receiverName;
 
+
     protected override async Task OnInitializedAsync()
     {
-        httpClient = new HttpClient { BaseAddress = new Uri("https://localhost:7121") };
-
         await InitializeHubConnectionAsync();
         await LoadUserDataAsync();
-        await RegisterUserAsync();
+        await ChatService.RegisterUserAsync(hubConnection, userName);
     }
 
     private async Task InitializeHubConnectionAsync()
@@ -85,19 +85,25 @@
 
     private async Task LoadUserDataAsync()
     {
-        currentUser = await httpClient.GetFromJsonAsync<User>($"api/user?username={userName}");
-        if (currentUser?.Chats != null)
+        var userResult = await ChatService.GetUserAsync(userName);
+        if (userResult.IsSuccess)
         {
-            chats = await httpClient.GetFromJsonAsync<List<Chat>>($"api/user/GetUserChats?username={userName}");
-            currentChat = currentUser.Chats.FirstOrDefault();
+            currentUser = userResult.Value;
+            var chatResult = await ChatService.GetUserChatsAsync(userName);
+            if (chatResult.IsSuccess)
+            {
+                chats = chatResult.Value;
+            }
+            else
+            {
+                Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
+            }
         }
-        currentUser.UserName = userName;
-    }
+        else
+        {
+            Snackbar.Add(userResult.Errors.First().Message, Severity.Error);
 
-    private async Task RegisterUserAsync()
-    {
-        await hubConnection.InvokeAsync("Register", userName);
-        StateHasChanged();
+        }
     }
 
     private async Task HandleReceivedMessageAsync(Message message)
@@ -118,16 +124,8 @@
             currentChat.Messages.Add(message);
         }
 
-        await UpdateChatAsync(targetChat);
+        await ChatService.UpdateChatAsync(targetChat);
         await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task UpdateChatAsync(Chat chat)
-    {
-        if (chat != null)
-        {
-            await httpClient.PostAsJsonAsync($"/api/user/UpdateChat", chat);
-        }
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -144,7 +142,11 @@
         {
             return;
         }
-
+        if (string.IsNullOrWhiteSpace(receiverName))
+        {
+            Snackbar.Add("Select Chat!", Severity.Error);
+            return;
+        }
         newMessage.ChatId = currentChat.Id;
         newMessage.TimeSent = DateTime.Now;
         newMessage.SenderName = currentUser.UserName;
@@ -157,18 +159,22 @@
     private async Task ChangeChat(string newReceiverName)
     {
         receiverName = newReceiverName;
-        currentChat = await GetOrCreateChatAsync(userName, receiverName);
+        var chatResult = await ChatService.GetOrCreateChatAsync(userName, receiverName);
 
-        if (!chats.Any(x => x.Id == currentChat.Id))
+        if (chatResult.IsSuccess)
         {
-            chats.Add(currentChat);
+            currentChat = chatResult.Value;
+
+            if (!chats.Any(x => x.Id == currentChat.Id))
+            {
+                chats.Add(currentChat);
+            }
+
+            StateHasChanged();
         }
-
-        StateHasChanged();
-    }
-
-    private async Task<Chat> GetOrCreateChatAsync(string senderName, string receiverName)
-    {
-        return await httpClient.GetFromJsonAsync<Chat>($"/api/user/GetOrCreateChat?senderName={senderName}&receiverName={receiverName}");
+        else
+        {
+            Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
+        }
     }
 }

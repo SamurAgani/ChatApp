@@ -1,6 +1,8 @@
 ﻿@page "/chatlist"
 @using Shared.Models
+@using ChatApp.Client.Services.Abstract
 @inject NavigationManager Navigation
+@rendermode InteractiveWebAssembly
 
 <MudContainer Class="chat-list-container pa-4">
     @if (Chats.Any())
@@ -22,7 +24,11 @@
     {
         <MudText>No active chats available</MudText>
     }
-
+      <MudContainer Class="pagination-controls">
+        <MudButton Disabled="@IsFirstPage" OnClick="@(() => LoadChats(CurrentPage - 1))">Previous</MudButton>
+        <MudText>Page @CurrentPage</MudText>
+        <MudButton Disabled="@IsLastPage" OnClick="@(() => LoadChats(CurrentPage + 1))">Next</MudButton>
+    </MudContainer>
     <MudPaper Class="chat-item chat-add-item pa-3 mt-3" Elevation="1">
         <MudGrid>
             <MudItem xs="9">
@@ -42,6 +48,13 @@
 
 
 @code {
+
+    private int CurrentPage = 1;
+    private int PageSize = 5;
+    private bool IsFirstPage => CurrentPage == 1;
+    private bool IsLastPage => Chats.Count < PageSize;
+    [Inject]
+    private IChatService ChatService { get; set; }
     [Parameter]
     public EventCallback<string> SelectUser { get; set; }
 
@@ -54,7 +67,15 @@
     private Chat _selectedChat;
     public string ErrorMessage { get; set; }
     public string newUserName { get; set; }
-
+    private async Task LoadChats(int page)
+    {
+        var response = await ChatService.GetChatsByUserNameAsync(UserName, page, PageSize);
+        if (response != null)
+        {
+            Chats = response.Value;
+            CurrentPage = page;
+        }
+    }
     private void SelectChat(Chat chat)
     {
         _selectedChat = chat;
@@ -75,26 +96,20 @@
         if (string.IsNullOrWhiteSpace(newUserName) || newUserName == UserName)
         {
             ErrorMessage = "User name is required.";
-            return;
+            return; 
         }
 
-        try
+        var result = await ChatService.UserExistsAsync(newUserName);
+
+        if (result.IsSuccess)
         {
-            var httpClient = new HttpClient();
-            var userExistsResponse = await httpClient.GetFromJsonAsync<bool>($"https://localhost:7121/api/user/UserExists?username={newUserName}");
-
-            if (!userExistsResponse)
-            {
-                ErrorMessage = $"User '{newUserName}' does not exist.";
-                return;
-            }
-
             await SelectUser.InvokeAsync(newUserName);
             newUserName = string.Empty;
+            LoadChats(1);
         }
-        catch (Exception ex)
+        else
         {
-            ErrorMessage = $"Error checking user: {ex.Message}";
+            ErrorMessage = result.Errors.First().Message;
         }
     }
 }

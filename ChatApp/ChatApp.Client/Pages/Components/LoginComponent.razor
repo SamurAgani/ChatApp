@@ -1,5 +1,7 @@
 ﻿@using Shared.Models
+@using ChatApp.Client.Services.Abstract
 @using MudBlazor
+@inject IChatService ChatService
 @inject NavigationManager navManager
 @rendermode InteractiveWebAssembly
 
@@ -32,11 +34,9 @@
         {
             return;
         }
-
-        var httpClient = new HttpClient();
-        var user = await httpClient.GetFromJsonAsync<User>("https://localhost:7121/api/user?username=" + UserName);
-        if (user != null)
-            navManager.NavigateTo($"/chat/{user.UserName}");
+        var userResult = await ChatService.GetUserAsync(UserName);
+        if (userResult != null)
+            navManager.NavigateTo($"/chat/{userResult.Value.UserName}");
 
     }
 }

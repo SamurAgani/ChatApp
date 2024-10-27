@@ -1,5 +1,7 @@
 ﻿using ChatApp.Services.Abstract;
+using FluentResults;
 using Microsoft.AspNetCore.Mvc;
+using Shared.DTOs;
 using Shared.Models;
 
 namespace ChatApp.Controllers
@@ -16,111 +18,86 @@ namespace ChatApp.Controllers
         }
 
         [HttpGet("GetUserChats")]
-        public async Task<ActionResult<List<Chat>>> GetUserChats([FromQuery] string username)
+        public async Task<IActionResult> GetUserChats([FromQuery] string username, [FromQuery] int page = 1, [FromQuery] int pageSize = 5)
         {
-            var chats = await _chatRepo.GetChatsByUserNameAsync(username);
-
-            return Ok(chats);
-        }
-
-        [HttpPost("UpdateChat")]
-        public async Task<ActionResult> UpdateChat(Chat chat)
-        {
-            await _chatRepo.UpdateChatAsync(chat);
-            return Ok();
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<User>> GetOrCreateUser([FromQuery] string username)
-        {
-            try
+            if (string.IsNullOrEmpty(username))
             {
-                if (string.IsNullOrEmpty(username))
-                {
-                    return BadRequest("Username is required.");
-                }
-
-                var user = await _chatRepo.GetUserByUserNameAsync(username);
-
-                if (user != null)
-                {
-                    return Ok(user);
-                }
-
-                var newUser = new User
-                {
-                    UserName = username,
-                    ImagePath = "default.png"
-                };
-
-                await _chatRepo.CreateUserAsync(newUser);
-                user = newUser; 
-
-                return Ok(user);
+                return BadRequest(Result.Fail("Username is required."));
             }
-            catch (Exception)
+
+            var result = await _chatRepo.GetChatsByUserNameAsync(username, page, pageSize);
+            
+            if (result.IsSuccess)
             {
-                return StatusCode(500, "An error occurred while processing your request.");
+                return Ok(result.Value);
+            }
+            else
+            {
+                return NotFound(result.Errors.FirstOrDefault()?.Message);
+            }
+        }
+
+
+        [HttpPost("GetOrCreateUser")]
+        public async Task<IActionResult> GetOrCreateUser([FromBody] string username)
+        {
+            if (string.IsNullOrEmpty(username))
+            {
+                return BadRequest(Result.Fail("Username is required."));
+            }
+
+            var userResult = await _chatRepo.GetUserByUserNameAsync(username);
+
+            if (userResult.IsSuccess)
+            {
+                if (userResult.Value != null)
+                {
+                    return Ok(userResult.Value);
+                }
+            }
+            else
+            {
+                return StatusCode(500, userResult.Errors.FirstOrDefault()?.Message);
+            }
+
+            var newUser = new User
+            {
+                UserName = username,
+                ImagePath = "default.png"
+            };
+
+            var createResult = await _chatRepo.CreateUserAsync(newUser);
+
+            if (createResult.IsSuccess)
+            {
+                return Ok(newUser);
+            }
+            else
+            {
+                return StatusCode(500, createResult.Errors.FirstOrDefault()?.Message);
             }
         }
 
         [HttpGet("UserExists")]
-        public async Task<ActionResult<bool>> UserExists([FromQuery] string username)
+        public async Task<IActionResult> UserExists([FromQuery] string username)
         {
             if (string.IsNullOrEmpty(username))
             {
-                return BadRequest("Username is required.");
+                return BadRequest(Result.Fail("Username is required."));
             }
 
-            var user = await _chatRepo.GetUserByUserNameAsync(username);
-            return Ok(user != null);
-        }
+            var userResult = await _chatRepo.GetUserByUserNameAsync(username);
 
-        [HttpGet("GetOrCreateChat")]
-        public async Task<ActionResult<Chat>> GetOrCreateChat([FromQuery] string senderName, [FromQuery] string receiverName)
-        {
-            if (string.IsNullOrEmpty(senderName) || string.IsNullOrEmpty(receiverName))
+            if (userResult.IsSuccess)
             {
-                return BadRequest("Both senderName and receiverName are required.");
+                bool exists = userResult.Value != null;
+                return Ok(exists);
             }
-
-            var sender = await _chatRepo.GetUserByUserNameAsync(senderName);
-            var receiver = await _chatRepo.GetUserByUserNameAsync(receiverName);
-
-            if (sender == null || receiver == null)
+            else
             {
-                return NotFound("One or both users do not exist.");
-            }
-
-            var existingChat = await _chatRepo.GetChatBetweenUsersAsync(senderName, receiverName);
-
-            if (existingChat != null)
-            {
-                await UpdateUnreadMessagesAsync(existingChat, senderName);
-                return Ok(existingChat);
-            }
-
-            var newChat = new Chat
-            {
-                Sender = sender,
-                Receiver = receiver,
-                Messages = new List<Message>()
-            };
-
-            await _chatRepo.CreateChatAsync(newChat);
-
-            return CreatedAtAction(nameof(GetOrCreateChat), new { senderName, receiverName }, newChat);
-        }
-
-        private async Task UpdateUnreadMessagesAsync(Chat existingChat, string senderName)
-        {
-            var lastMessage = existingChat.Messages.OrderByDescending(x => x.Id).FirstOrDefault();
-
-            if (lastMessage?.SenderName != senderName)
-            {
-                existingChat.UnreadMessages = 0;
-                await _chatRepo.UpdateChatAsync(existingChat);
+                return StatusCode(500, userResult.Errors.FirstOrDefault()?.Message);
             }
         }
+
     }
 }

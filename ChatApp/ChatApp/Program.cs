@@ -1,5 +1,7 @@
 using ChatApp;
 using ChatApp.Client.Pages;
+using ChatApp.Client.Services.Abstract;
+using ChatApp.Client.Services.Concrete;
 using ChatApp.Components;
 using ChatApp.Hubs;
 using ChatApp.Services.Abstract;
@@ -16,6 +18,8 @@ builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddMudServices();
 
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7121/") });
+builder.Services.AddScoped<IChatService, ChatService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
