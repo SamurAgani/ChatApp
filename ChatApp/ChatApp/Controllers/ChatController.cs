@@ -1,6 +1,5 @@
 ﻿using ChatApp.Services.Abstract;
 using FluentResults;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
 using Shared.Models;
@@ -19,20 +18,16 @@ namespace ChatApp.Controllers
         }
 
         [HttpPost("GetOrCreateChat")]
-        public async Task<IActionResult> GetOrCreateChat(GetOrCreateChatDto getOrCreateChatDto)
+        public async Task<IActionResult> GetOrCreateChat([FromBody] GetOrCreateChatDto getOrCreateChatDto)
         {
-            if (string.IsNullOrEmpty(getOrCreateChatDto.SenderName) || string.IsNullOrEmpty(getOrCreateChatDto.ReceiverName))
-            {
+            if (string.IsNullOrWhiteSpace(getOrCreateChatDto.SenderName) || string.IsNullOrWhiteSpace(getOrCreateChatDto.ReceiverName))
                 return BadRequest(Result.Fail("Both senderName and receiverName are required."));
-            }
 
             var senderResult = await _chatRepo.GetUserByUserNameAsync(getOrCreateChatDto.SenderName);
             var receiverResult = await _chatRepo.GetUserByUserNameAsync(getOrCreateChatDto.ReceiverName);
 
             if (senderResult.IsFailed || senderResult.Value == null || receiverResult.IsFailed || receiverResult.Value == null)
-            {
                 return NotFound(Result.Fail("One or both users do not exist."));
-            }
 
             var chatResult = await _chatRepo.GetChatBetweenUsersAsync(getOrCreateChatDto.SenderName, getOrCreateChatDto.ReceiverName);
 
@@ -41,48 +36,33 @@ namespace ChatApp.Controllers
                 await UpdateUnreadMessagesAsync(chatResult.Value, getOrCreateChatDto.SenderName);
                 return Ok(chatResult.Value);
             }
-            else
+
+            var newChat = new Chat
             {
-                var newChat = new Chat
-                {
-                    Sender = senderResult.Value,
-                    Receiver = receiverResult.Value,
-                    Messages = new List<Message>()
-                };
+                Sender = senderResult.Value,
+                Receiver = receiverResult.Value,
+                Messages = new List<Message>()
+            };
 
-                var createChatResult = await _chatRepo.CreateChatAsync(newChat);
+            var createChatResult = await _chatRepo.CreateChatAsync(newChat);
 
-                if (createChatResult.IsSuccess)
-                {
-                    return CreatedAtAction(nameof(GetOrCreateChat), new { getOrCreateChatDto.SenderName, getOrCreateChatDto.ReceiverName }, newChat);
-                }
-                else
-                {
-                    return StatusCode(500, createChatResult.Errors.FirstOrDefault()?.Message);
-                }
-            }
+            return createChatResult.IsSuccess
+                ? CreatedAtAction(nameof(GetOrCreateChat), new { getOrCreateChatDto.SenderName, getOrCreateChatDto.ReceiverName }, newChat)
+                : StatusCode(500, createChatResult.Errors.FirstOrDefault()?.Message);
         }
 
         [HttpPost("UpdateChat")]
         public async Task<IActionResult> UpdateChat([FromBody] Chat chat)
         {
             if (chat == null)
-            {
                 return BadRequest(Result.Fail("Chat data is required."));
-            }
 
             var result = await _chatRepo.UpdateChatAsync(chat);
 
-            if (result.IsSuccess)
-            {
-                return Ok();
-            }
-            else
-            {
-                return BadRequest(result.Errors.FirstOrDefault()?.Message);
-            }
+            return result.IsSuccess
+                ? Ok()
+                : BadRequest(result.Errors.FirstOrDefault()?.Message);
         }
-
 
         private async Task UpdateUnreadMessagesAsync(Chat existingChat, string senderName)
         {
