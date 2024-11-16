@@ -10,33 +10,42 @@
         <MudPaper Elevation="4" Class="mud-paper">
             <MudText Typo="Typo.h6" Class="mud-text">Login</MudText>
             <MudForm Class="mud-form">
-                <MudTextField T="string" 
-                              @bind-Value="UserName" 
-                              Variant="Variant.Filled" 
+                <MudTextField T="string"
+                              @bind-Value="UserName"
+                              Variant="Variant.Filled"
                               Label="Enter your name"
                               Class="mud-textfield" />
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SignIn" Class="mud-button">Sign In</MudButton>
             </MudForm>
         </MudPaper>
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <MudText Color="Color.Error" Class="mt-2">@ErrorMessage</MudText>
+        }
     </MudItem>
 </MudGrid>
 
 
 
 
+
 @code {
     public string UserName { get; set; }
+    public string ErrorMessage { get; set; }
 
 
     public async Task SignIn()
     {
         if (string.IsNullOrWhiteSpace(UserName))
         {
+            ErrorMessage = "Please add user name!";
             return;
         }
         var userResult = await ChatService.GetUserAsync(UserName);
         if (userResult != null)
             navManager.NavigateTo($"/chat/{userResult.Value.UserName}");
+        else
+            ErrorMessage = "User name is not valid";
 
     }
 }

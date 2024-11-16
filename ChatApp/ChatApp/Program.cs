@@ -40,6 +40,6 @@ app.MapControllers();
 
 app.MapRazorComponents<App>()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Counter).Assembly);
+    .AddAdditionalAssemblies(typeof(ChatPage).Assembly);
 app.MapHub<ChatHub>("/chathub");
 app.Run();

@@ -72,38 +72,53 @@
         await ChatService.RegisterUserAsync(hubConnection, userName);
     }
 
+  
+
     private async Task InitializeHubConnectionAsync()
     {
         hubConnection = new HubConnectionBuilder()
             .WithUrl(Navigation.ToAbsoluteUri("/chathub"))
+            .WithAutomaticReconnect()
             .Build();
 
         hubConnection.On<Message>("ReceiveMessage", async (message) => await HandleReceivedMessageAsync(message));
 
-        await hubConnection.StartAsync();
+        hubConnection.Closed += async (error) =>
+        {
+            Console.WriteLine(error != null
+                ? $"Connection closed due to an error: {error.Message}"
+                : "Connection closed.");
+            await ReconnectAsync();
+        };
+
+        try
+        {
+            await hubConnection.StartAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error starting hub connection: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task LoadUserDataAsync()
     {
         var userResult = await ChatService.GetUserAsync(userName);
-        if (userResult.IsSuccess)
-        {
-            currentUser = userResult.Value;
-            var chatResult = await ChatService.GetUserChatsAsync(userName);
-            if (chatResult.IsSuccess)
-            {
-                chats = chatResult.Value;
-            }
-            else
-            {
-                Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
-            }
-        }
-        else
+        if (!userResult.IsSuccess)
         {
             Snackbar.Add(userResult.Errors.First().Message, Severity.Error);
-
+            return;
         }
+
+        currentUser = userResult.Value;
+        var chatResult = await ChatService.GetUserChatsAsync(userName);
+        if (!chatResult.IsSuccess)
+        {
+
+            Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
+            return;
+        }
+        chats = chatResult.Value.ToList();
     }
 
     private async Task HandleReceivedMessageAsync(Message message)
@@ -161,20 +176,47 @@
         receiverName = newReceiverName;
         var chatResult = await ChatService.GetOrCreateChatAsync(userName, receiverName);
 
-        if (chatResult.IsSuccess)
+        if (!chatResult.IsSuccess)
         {
-            currentChat = chatResult.Value;
+            Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
+        }
+        currentChat = chatResult.Value;
 
-            if (!chats.Any(x => x.Id == currentChat.Id))
+        if (!chats.Any(x => x.Id == currentChat.Id))
+        {
+            chats.Add(currentChat);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task ReconnectAsync()
+    {
+        const int maxAttempts = 5;
+        int attempt = 0;
+
+        while (attempt < maxAttempts && hubConnection.State != HubConnectionState.Connected)
+        {
+            attempt++;
+            try
             {
-                chats.Add(currentChat);
+                await Task.Delay(TimeSpan.FromSeconds(attempt * 2)); // Exponential backoff
+                await hubConnection.StartAsync();
             }
+            catch
+            {
+                // Log failure to reconnect
+                Console.WriteLine($"Reconnect attempt {attempt} failed.");
+            }
+        }
 
-            StateHasChanged();
+        if (hubConnection.State == HubConnectionState.Connected)
+        {
+            Console.WriteLine("Reconnected successfully.");
         }
         else
         {
-            Snackbar.Add(chatResult.Errors.First().Message, Severity.Error);
+            Console.WriteLine("Failed to reconnect after maximum attempts.");
         }
     }
 }

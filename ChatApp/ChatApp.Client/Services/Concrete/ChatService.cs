@@ -47,11 +47,11 @@ public class ChatService : IChatService
         }
     }
 
-    public async Task<Result<List<Chat>>> GetUserChatsAsync(string userName)
+    public async Task<Result<IList<Chat>>> GetUserChatsAsync(string userName)
     {
         try
         {
-            var chats = await _httpClient.GetFromJsonAsync<List<Chat>>($"api/user/GetUserChats?username={userName}");
+            var chats = await _httpClient.GetFromJsonAsync<IList<Chat>>($"api/user/GetUserChats?username={userName}");
             return chats != null ? Result.Ok(chats) : Result.Fail("No chats found.");
         }
         catch (Exception ex)
@@ -108,11 +108,11 @@ public class ChatService : IChatService
         }
     }
 
-    public async Task<Result<List<Chat>>> GetChatsByUserNameAsync(string username, int page, int pageSize)
+    public async Task<Result<IList<Chat>>> GetChatsByUserNameAsync(string username, int page, int pageSize)
     {
         try
         {
-            var chats = await _httpClient.GetFromJsonAsync<List<Chat>>($"/api/User/GetUserChats?username={username}&page={page}&pageSize={pageSize}");
+            var chats = await _httpClient.GetFromJsonAsync<IList<Chat>>($"/api/User/GetUserChats?username={username}&page={page}&pageSize={pageSize}");
             return chats != null ? Result.Ok(chats) : Result.Fail("No chats found.");
         }
         catch (Exception ex)

@@ -15,7 +15,7 @@
                 </MudItemText>
                 @if (chat.UnreadMessages > 0)
                 {
-                    <MudBadge Content="@chat.UnreadMessages" Color="Color.Secondary" Class="chat-badge"/>
+                    <MudBadge Content="@chat.UnreadMessages" Color="Color.Secondary" Class="chat-badge" />
                 }
             </MudPaper>
         }
@@ -24,7 +24,7 @@
     {
         <MudText>No active chats available</MudText>
     }
-      <MudContainer Class="pagination-controls">
+    <MudContainer Class="pagination-controls">
         <MudButton Disabled="@IsFirstPage" OnClick="@(() => LoadChats(CurrentPage - 1))">Previous</MudButton>
         <MudText>Page @CurrentPage</MudText>
         <MudButton Disabled="@IsLastPage" OnClick="@(() => LoadChats(CurrentPage + 1))">Next</MudButton>
@@ -59,7 +59,7 @@
     public EventCallback<string> SelectUser { get; set; }
 
     [Parameter]
-    public List<Chat> Chats { get; set; } = new List<Chat>();
+    public IList<Chat> Chats { get; set; } = new List<Chat>();
 
     [Parameter]
     public string UserName { get; set; }
@@ -96,20 +96,17 @@
         if (string.IsNullOrWhiteSpace(newUserName) || newUserName == UserName)
         {
             ErrorMessage = "User name is required.";
-            return; 
+            return;
         }
 
         var result = await ChatService.UserExistsAsync(newUserName);
 
-        if (result.IsSuccess)
-        {
-            await SelectUser.InvokeAsync(newUserName);
-            newUserName = string.Empty;
-            LoadChats(1);
-        }
-        else
+        if (!result.IsSuccess)
         {
             ErrorMessage = result.Errors.First().Message;
         }
+        await SelectUser.InvokeAsync(newUserName);
+        newUserName = string.Empty;
+        LoadChats(1);
     }
 }
